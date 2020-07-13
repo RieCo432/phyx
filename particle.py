@@ -12,89 +12,79 @@ class Particle:
         self.type = randint(0, 3)
         self.color = Config.particle_colors[self.type]
         self.radius = Config.particle_radi[self.type]
+        self.radius_px = floor(self.radius * Config.px_per_m)
         self.density = Config.particle_densities[self.type]
         self.charge = Config.particle_charges[self.type]
         self.volume = 4/3 * pi * self.radius ** 3
         self.mass = self.volume * self.density
-        self.x = randint(0, Config.field_width-1)
-        self.y = randint(0, Config.field_height-1)
+        self.x = randint(self.radius_px + 10, Config.field_width - self.radius_px - 10)
+        self.y = randint(self.radius_px + 10, Config.field_height - self.radius_px - 10)
         self.pos_x = self.x / Config.px_per_m
         self.pos_y = self.y / Config.px_per_m
         self.vel_x = 0
         self.vel_y = 0
         self.acc_x = 0
         self.acc_y = 0
+        self.force_x = 0
+        self.force_y = 0
 
-    def update(self, particles):
+    def calc_forces(self, particles):
 
-        self.acc_x = 0
-        self.acc_y = 0
-
-        #self.acc_x = Config.friction_coeff * self.vel_x ** 2
-        #self.acc_y = Config.friction_coeff * self.vel_y ** 2
-
-        #if self.vel_x < 0:
-        #    self.acc_x *= -1
-        #if self.vel_y < 0:
-        #    self.acc_y *= -1
+        self.force_x = 0
+        self.force_y = 0
 
         for particle in particles:
-            if particle.pos_x != self.pos_x or particle.pos_y != self.pos_y and physics.dist(self.pos_x, self.pos_y, particle.pos_x, particle.pos_y) > (self.radius + particle.radius):
-                grav_F = physics.gravitational_force(self, particle)
-                grav_F_x, grav_F_y = physics.get_vector_components(grav_F, self, particle)
-                elec_F = physics.electric_force(self, particle)
-                elec_F_x, elec_F_y = physics.get_vector_components(elec_F, self, particle)
+            if particle is not self and physics.get_particle_dist(self, particle) > self.radius + particle.radius:
+                F_elec = physics.electric_force(self, particle)
+                F_elec_x, F_elec_y = physics.get_vector_components(F_elec, self, particle)
+                F_grav = physics.gravitational_force(self, particle)
+                F_grav_x, F_grav_y = physics.get_vector_components(F_grav, self, particle)
 
-                self.acc_x += grav_F_x / self.mass
-                self.acc_x += elec_F_x / self.mass
-                self.acc_y += grav_F_y / self.mass
-                self.acc_y += elec_F_y / self.mass
+                # print(F_grav, F_elec)
 
-                self.acc_x /= Config.target_fps
-                self.acc_y /= Config.target_fps
+                self.force_x += F_elec_x + F_grav_x
+                self.force_y += F_elec_y + F_grav_y
+                #print(self, "vs", particle)
+            #elif particle is self:
+                #print(self, "vs", particle, "same, skip")
+            #else:
+                #print(self, "and", particle, "merged, skip")
+
+        #print(self.force_x, self.force_y)
 
 
-        self.vel_x += self.acc_x
-        self.vel_y += self.acc_y
+    def update(self, dT):
 
-        # temp solution for excessive speeds
-        if self.vel_x > Config.max_speed:
-            self.vel_x = Config.max_speed
-        elif self.vel_x < Config.max_speed:
-            self.vel_x = -Config.max_speed
-        if self.vel_y > Config.max_speed:
-            self.vel_y = Config.max_speed
-        elif self.vel_y < Config.max_speed:
-            self.vel_y = -Config.max_speed
+        self.acc_x = self.force_x / self.mass
+        self.acc_y = self.force_y / self.mass
 
-        self.pos_x += self.vel_x
-        self.pos_y += self.vel_y
+        self.vel_x += self.acc_x * dT
+        self.vel_y += self.acc_y * dT
+
+        self.pos_x += 0.5 * self.acc_x * dT ** 2
+        self.pos_y += 0.5 * self.acc_y * dT ** 2
+
+
+    def detect_collisions(self, particles):
+
+        if self.pos_x - self.radius < 0:
+            self.pos_x = self.radius
+            self.vel_x *= -1
+        elif self.pos_x + self.radius > Config.field_width_m:
+            self.pos_x = Config.field_width_m - self.radius
+            self.vel_x *= -1
+
+        if self.pos_y - self.radius < 0:
+            self.pos_y = self.radius
+            self.vel_y *= -1
+        elif self.pos_y + self.radius > Config.field_height_m:
+            self.pos_y = Config.field_height_m - self.radius
+            self.vel_y *= -1
+
+
+
+    def draw(self, screen):
 
         self.x = floor(self.pos_x * Config.px_per_m)
         self.y = floor(self.pos_y * Config.px_per_m)
-
-        if self.x < 0:
-            if self.vel_x < 0:
-                self.vel_x = - self.vel_x
-            self.x = 1
-            self.pos_x = 1 / Config.px_per_m
-        elif self.x > Config.field_width:
-            if self.vel_x > 0:
-                self.vel_x = - self.vel_x
-            self.x = Config.field_width - 1
-            self.pos_x = (Config.field_width - 1) / Config.px_per_m
-        if self.y < 0:
-            if self.vel_y < 0:
-                self.vel_y = - self.vel_y
-            self.y = 1
-            self.pos_y = 1 / Config.px_per_m
-        elif self.y > Config.field_height:
-            if self.vel_y > 0:
-                self.vel_y = - self.vel_y
-            self.y = Config.field_height - 1
-            self.pos_y = (Config.field_height - 1) / Config.px_per_m
-
-        print(self.pos_x, self.pos_y, self.vel_x, self.vel_y)
-
-    def draw(self, screen):
-        pygame.draw.circle(screen, self.color, (self.x, self.y), self.radius * Config.px_per_m)
+        pygame.draw.circle(screen, self.color, (self.x, self.y), self.radius_px)

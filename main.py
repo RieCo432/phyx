@@ -27,8 +27,9 @@ if __name__ == "__main__":
                 sys.exit()
 
         screen.fill(Color.black)
-        game.update_all()
-        # print(game.particles[0].pos_x, game.particles[0].pos_y, game.particles[0].color)
+        game.calc_forces_all()
+        game.update_all(frametimes[-1])
+        game.detect_collisions_all()
         game.draw_all(screen)
 
         pygame.display.update()
@@ -40,5 +41,3 @@ if __name__ == "__main__":
         if (datetime.now() - last_framerate_update).total_seconds() > 0.5:
             pygame.display.set_caption("Framerate: %f" % (1 / (sum(frametimes) / len(frametimes))))
             last_framerate_update = datetime.now()
-
-        time.sleep(0.01)

@@ -21,6 +21,11 @@ def dist(x1, y1, x2, y2):
     return sqrt(dX**2 + dY**2)
 
 
+def get_particle_dist(p1, p2):
+
+    return dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y)
+
+
 def get_vector_components(F, p1, p2):
 
     sin_a = (p2.pos_y - p1.pos_y) / dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y)
