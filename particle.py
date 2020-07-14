@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, uniform
 from config import Config
 from math import pi, sin, cos, tan, floor
 import physics
@@ -9,7 +9,7 @@ class Particle:
 
     def __init__(self):
 
-        self.type = randint(0, 3)
+        self.type = randint(0, len(Config.particle_colors)-1)
         self.color = Config.particle_colors[self.type]
         self.radius = Config.particle_radi[self.type]
         self.radius_px = floor(self.radius * Config.px_per_m)
@@ -21,8 +21,8 @@ class Particle:
         self.y = randint(self.radius_px + 10, Config.field_height - self.radius_px - 10)
         self.pos_x = self.x / Config.px_per_m
         self.pos_y = self.y / Config.px_per_m
-        self.vel_x = 0
-        self.vel_y = 0
+        self.vel_x = uniform(-1, 1)
+        self.vel_y = uniform(-1, 1)
         self.acc_x = 0
         self.acc_y = 0
         self.force_x = 0
@@ -52,20 +52,21 @@ class Particle:
 
         #print(self.force_x, self.force_y)
 
-
     def update(self, dT):
 
         self.acc_x = self.force_x / self.mass
         self.acc_y = self.force_y / self.mass
 
+        self.vel_x *= (1 - Config.friction_coeff * dT)
+        self.vel_y *= (1 - Config.friction_coeff * dT)
+
         self.vel_x += self.acc_x * dT
         self.vel_y += self.acc_y * dT
 
-        self.pos_x += 0.5 * self.acc_x * dT ** 2
-        self.pos_y += 0.5 * self.acc_y * dT ** 2
+        self.pos_x += self.vel_x * dT
+        self.pos_y += self.vel_y * dT
 
-
-    def detect_collisions(self, particles):
+    def detect_collisions(self, particles, dT):
 
         if self.pos_x - self.radius < 0:
             self.pos_x = self.radius
@@ -81,7 +82,25 @@ class Particle:
             self.pos_y = Config.field_height_m - self.radius
             self.vel_y *= -1
 
+        for particle in particles:
+            if physics.get_particle_dist(self, particle) <= self.radius + particle.radius:
+                new_self_vel_x = (self.vel_x * (abs(self.mass) - abs(particle.mass)) + (2 * abs(particle.mass) * particle.vel_x)) / (abs(self.mass) + abs(particle.mass))
+                new_self_vel_y = (self.vel_y * (abs(self.mass) - abs(particle.mass)) + (2 * abs(particle.mass) * particle.vel_y)) / (abs(self.mass) + abs(particle.mass))
 
+                new_particle_vel_x = (particle.vel_x * (abs(particle.mass) - abs(self.mass)) + (2 * abs(self.mass) * self.vel_x)) / (abs(self.mass) + abs(particle.mass))
+                new_particle_vel_y = (particle.vel_y * (abs(particle.mass) - abs(self.mass)) + (2 * abs(self.mass) * self.vel_y)) / (abs(self.mass) + abs(particle.mass))
+
+                self.vel_x = new_self_vel_x
+                self.vel_y = new_self_vel_y
+
+                particle.vel_x = new_particle_vel_x
+                particle.vel_y = new_particle_vel_y
+
+                self.pos_x += self.vel_x * dT
+                self.pos_y += self.vel_y * dT
+
+                particle.pos_x += particle.vel_x * dT
+                particle.pos_y += particle.vel_y * dT
 
     def draw(self, screen):
 

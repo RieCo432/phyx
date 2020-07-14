@@ -29,7 +29,7 @@ if __name__ == "__main__":
         screen.fill(Color.black)
         game.calc_forces_all()
         game.update_all(frametimes[-1])
-        game.detect_collisions_all()
+        game.detect_collisions_all(frametimes[-1])
         game.draw_all(screen)
 
         pygame.display.update()

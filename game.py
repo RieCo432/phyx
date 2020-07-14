@@ -18,9 +18,9 @@ class Game:
         for particle in self.particles:
             particle.update(dT)
 
-    def detect_collisions_all(self):
+    def detect_collisions_all(self, dT):
         for part_num in range(len(self.particles)):
-            self.particles[part_num].detect_collisions(self.particles[part_num:])
+            self.particles[part_num].detect_collisions(self.particles[part_num:], dT)
 
     def draw_all(self, screen):
         for particle in self.particles:

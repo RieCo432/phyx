@@ -3,11 +3,11 @@ from math import sqrt
 
 
 def electric_force(p1, p2):
-    return - Config.K_const * p1.charge * p2.charge / dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y)**2
+    return - Config.K_const * p1.charge * p2.charge / get_particle_dist(p1, p2)**2
 
 
 def gravitational_force(p1, p2):
-    return Config.G_const * p1.mass * p2.mass / dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y)**2
+    return Config.G_const * p1.mass * p2.mass / get_particle_dist(p1, p2)**2
 
 
 def get_x1y1x2y2(p1, p2):
@@ -23,7 +23,7 @@ def dist(x1, y1, x2, y2):
 
 def get_particle_dist(p1, p2):
 
-    return dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y)
+    return max([dist(p1.pos_x, p1.pos_y, p2.pos_x, p2.pos_y), p1.radius+p2.radius])
 
 
 def get_vector_components(F, p1, p2):
